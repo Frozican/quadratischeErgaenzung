@@ -1,0 +1,97 @@
+<title>Parabelwerkstatt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  /* Layout: Karoseite wie im Mathe-Heft, darauf ein Übungsblatt mit Reitern.
+     Tintenblau für alles Aktive, Rotstift-Rot nur für Korrekturen. */
+  :root {
+    --bg: #F3F6FB;
+    --grid: #D9E2F1;
+    --surface: #FFFFFF;
+    --surface-2: #EEF2F9;
+    --ink: #17203A;
+    --muted: #566180;
+    --line: #C9D3E6;
+    --accent: #2338B5;
+    --accent-ink: #FFFFFF;
+    --ok: #1B7A4B;
+    --ok-bg: #E3F4EA;
+    --bad: #BF2F28;
+    --bad-bg: #FBE7E5;
+    --info-bg: #E7ECF9;
+    --mark: #FFE98A;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', system-ui, sans-serif;
+    --font-math: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101528;
+      --grid: #1C2542;
+      --surface: #182040;
+      --surface-2: #1F294F;
+      --ink: #E8ECF8;
+      --muted: #9AA5C7;
+      --line: #2E3A66;
+      --accent: #8FA3FF;
+      --accent-ink: #0E1430;
+      --ok: #5ED39B;
+      --ok-bg: #12362A;
+      --bad: #FF8179;
+      --bad-bg: #3A1B1F;
+      --info-bg: #222D5A;
+      --mark: #6A5A14;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101528;
+    --grid: #1C2542;
+    --surface: #182040;
+    --surface-2: #1F294F;
+    --ink: #E8ECF8;
+    --muted: #9AA5C7;
+    --line: #2E3A66;
+    --accent: #8FA3FF;
+    --accent-ink: #0E1430;
+    --ok: #5ED39B;
+    --ok-bg: #12362A;
+    --bad: #FF8179;
+    --bad-bg: #3A1B1F;
+    --info-bg: #222D5A;
+    --mark: #6A5A14;
+    color-scheme: dark;
+  }
+</style>
+
+<div class="shell">
+  <header class="top">
+    <p class="kicker">Mathematik · Quadratische Funktionen</p>
+    <div class="brand">
+      <svg viewBox="0 0 48 38" width="44" height="34" aria-hidden="true">
+        <path d="M4 4 Q24 60 44 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="24" cy="32" r="3.4" fill="currentColor"/>
+      </svg>
+      <h1>Parabelwerkstatt</h1>
+    </div>
+  </header>
+
+  <nav id="tabs" class="tabs" role="tablist" aria-label="Übungen"></nav>
+  <main id="stage" class="stage"></main>
+
+  <footer class="foot">Dein Fortschritt wird nur in diesem Browser gespeichert.</footer>
+</div>
+
+<noscript><p style="padding:1rem">Diese Seite braucht JavaScript.</p></noscript>
+
+<!-- Kern: erst Mathe-Helfer, dann Tab-System, dann die Übungen -->
+<script src="core/math.js"></script>
+<script src="core/app.js"></script>
+
+<!-- Übungen: pro Tab eine Zeile. Reihenfolge der Zeilen = Reihenfolge der Reiter. -->
+<script src="tabs/quadratische-ergaenzung.js"></script>
+
+<script>Lernseite.start();</script>
