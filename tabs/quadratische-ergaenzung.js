@@ -171,8 +171,10 @@
     defs.push({
       head: 'Scheitelpunktform',
       names: ['d', 'e'],
-      build: f => [span(fx + ' = ' + pre + '(' + X + ' +'), f.d, span(')<sup>2</sup> +'), f.e],
-      note: 'Zielform: ' + (lvl3 ? V('a') + ' ' : '') + '(' + X + ' + ' + V('d') + ')<sup>2</sup> + ' + V('e') + '.' + SIGN_NOTE,
+      signed: true,   /* Vorzeichen wählen die SuS selbst: (x + 5)² oder (x − 5)² */
+      build: f => [span(fx + ' = ' + pre + '(' + X), f.d, span(')<sup>2</sup>'), f.e],
+      note: 'Zielform: ' + (lvl3 ? V('a') + ' ' : '') + '(' + X + ' ± ' + V('d') + ')<sup>2</sup> ± ' + V('e') +
+        '. Wähle mit dem Knopf + oder − und trage die Zahl ohne Vorzeichen ein. Brüche gehen als 3/2, Dezimalzahlen als 1,5.',
       check: (task, v) => evaluate(task, { a: task.a, d: v.d, e: v.e }),
     });
     return defs;
@@ -298,6 +300,17 @@
 .qe-answer > span { padding-top: .35rem; white-space: nowrap; }
 .qe-phases { display: flex; flex-direction: column; gap: 1.1rem; }
 .qe-stephead { margin: 0; font: 600 .75rem var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.qe-sf { display: inline-flex; align-items: stretch; gap: 4px; }
+.qe-sign {
+  appearance: none; min-width: 2.5rem; padding: 0 .3rem;
+  font: 600 1.5rem var(--font-math); color: var(--muted);
+  background: var(--surface); border: 2px solid var(--line); border-radius: 8px; cursor: pointer;
+}
+.qe-sign:hover:not(:disabled) { border-color: var(--accent); }
+.qe-sign.ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ink); }
+.qe-sign.bad { border-color: var(--bad); background: var(--bad-bg); color: var(--ink); }
+.qe-sign:not(.ok):not(.bad):not(:disabled) { color: var(--accent); }
+.qe-sign:disabled { cursor: default; color: var(--ink); }
 .qe-fld { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
 .qe-fld small { font: italic 400 .95rem var(--font-math); color: var(--muted); }
 .qe-in {
@@ -444,13 +457,52 @@
       }
 
       /* --- Aufgabe aufbauen --- */
-      function makeField(name, label) {
+      /* signed = true: Vorzeichen-Knopf (? → + → −) vor dem Zahlenfeld; im Feld steht nur die Zahl */
+      function makeField(name, label, signed) {
         const input = h('input', {
           class: 'qe-in', type: 'text', inputmode: 'text', autocomplete: 'off', autocapitalize: 'off',
           spellcheck: 'false', 'aria-label': 'Eingabe ' + name,
         });
-        input.addEventListener('input', () => { input.classList.remove('ok', 'bad'); input.removeAttribute('aria-invalid'); });
-        return { name, input, el: h('label', { class: 'qe-fld' }, input, h('small', { html: label || V(name) })) };
+        const f = { name, input, signed: !!signed, sign: null, signBtn: null, el: null };
+        input.addEventListener('input', () => clearState(f));
+        const small = h('small', { html: label || V(name) });
+        if (signed) {
+          f.signBtn = h('button', { class: 'qe-sign', type: 'button', onClick: () => {
+            setSign(f, f.sign === '+' ? '-' : '+'); clearState(f);
+          } });
+          setSign(f, null);
+          f.el = h('div', { class: 'qe-fld' }, h('div', { class: 'qe-sf' }, f.signBtn, input), small);
+        } else {
+          f.el = h('label', { class: 'qe-fld' }, input, small);
+        }
+        return f;
+      }
+      function setSign(f, s) {
+        f.sign = s;
+        f.signBtn.textContent = s === '+' ? '+' : s === '-' ? MINUS : '?';
+        f.signBtn.setAttribute('aria-label', 'Vorzeichen von ' + f.name + ': ' + (s === '+' ? 'plus' : s === '-' ? 'minus' : 'noch nicht gewählt'));
+      }
+      function clearState(f) {
+        f.input.classList.remove('ok', 'bad');
+        f.input.removeAttribute('aria-invalid');
+        if (f.signBtn) f.signBtn.classList.remove('ok', 'bad');
+      }
+      function lockField(f) {
+        f.input.readOnly = true;
+        if (f.signBtn) f.signBtn.disabled = true;
+      }
+      /* liest ein Feld als Bruch; bei Problemen { error: 'num' | 'neg' | 'sign' } */
+      function readField(f) {
+        const v = M.parse(f.input.value);
+        if (!v) return { error: 'num' };
+        if (!f.signed) return { value: v };
+        if (v.n < 0) return { error: 'neg' };
+        if (!f.sign) return { error: 'sign' };
+        return { value: f.sign === '-' ? neg(v) : v };
+      }
+      function fillField(f, q) {
+        if (f.signed) { setSign(f, q.n < 0 ? '-' : '+'); f.input.value = plain(M.abs(q)); }
+        else f.input.value = plain(q);
       }
 
       function newTask(focus) {
@@ -460,7 +512,7 @@
         defs = phaseDefs(task);
         fields = [];
         phasesBox.replaceChildren.apply(phasesBox, defs.map((def, i) => {
-          def.fields = def.names.map(n => makeField(n, def.labels && def.labels[n]));
+          def.fields = def.names.map(n => makeField(n, def.labels && def.labels[n], def.signed));
           fields = fields.concat(def.fields);
           const f = {}; def.fields.forEach(x => { f[x.name] = x.el; });
           def.row = h('div', { class: 'qe-phase', hidden: i > 0 },
@@ -487,9 +539,10 @@
       function setState(f, ok) {
         f.input.classList.toggle('ok', ok);
         f.input.classList.toggle('bad', !ok);
+        if (f.signBtn) { f.signBtn.classList.toggle('ok', ok); f.signBtn.classList.toggle('bad', !ok); }
         if (ok) f.input.removeAttribute('aria-invalid'); else f.input.setAttribute('aria-invalid', 'true');
       }
-      function lock() { fields.forEach(f => { f.input.readOnly = true; }); }
+      function lock() { fields.forEach(lockField); }
       function say(kind, html) { fb.className = 'qe-fb ' + kind; fb.innerHTML = html; fb.hidden = !html; }
 
       function showAfter() {
@@ -511,12 +564,23 @@
         ev.preventDefault();
         if (status !== 'open') { newTask(true); return; }
         const def = defs[phase];
-        const vals = {}, missing = [];
-        def.fields.forEach(f => { const v = M.parse(f.input.value); vals[f.name] = v; if (!v) missing.push(f); });
+        const vals = {}, problems = [], missing = [];
+        def.fields.forEach(f => {
+          const r = readField(f);
+          if (r.error) { missing.push(f); if (problems.indexOf(r.error) < 0) problems.push(r.error); }
+          else vals[f.name] = r.value;
+        });
         if (missing.length) {
+          const texts = {
+            num: 'Trage in jedes Feld eine Zahl ein, zum Beispiel 3, 1,5 oder 3/2.',
+            neg: 'Trage die Zahl ohne Vorzeichen ein. Das Vorzeichen wählst du mit dem Knopf davor.',
+            sign: 'Wähle mit dem Knopf vor der Zahl, ob + oder − gilt.',
+          };
           missing.forEach(f => setState(f, false));
-          say('bad', '<p>Trage in jedes Feld eine Zahl ein, zum Beispiel ' + MINUS + '3, 1,5 oder 3/2.</p>');
-          missing[0].input.focus();
+          say('bad', problems.map(k => '<p>' + texts[k] + '</p>').join(''));
+          const first = missing[0];
+          const signMissing = first.signBtn && first.sign === null && first.input.value.trim() !== '';
+          (signMissing ? first.signBtn : first.input).focus();
           return;
         }
         attempts++;
@@ -530,7 +594,7 @@
           (attempts >= 2 && hintStage === 0 ? '<p>Tipp: Der Knopf „Hinweis“ hilft dir Schritt für Schritt.</p>' : ''));
       }
       function advance(def) {
-        def.fields.forEach(f => { f.input.readOnly = true; });
+        def.fields.forEach(lockField);
         phase++;
         defs[phase].row.hidden = false;
         note.innerHTML = defs[phase].note;
@@ -559,7 +623,7 @@
           status = 'revealed';
           record(false);
           defs.forEach(d => { d.row.hidden = false; });
-          fields.forEach(f => { f.input.value = plain(valueOf(task, f.name)); setState(f, true); });
+          fields.forEach(f => { fillField(f, valueOf(task, f.name)); setState(f, true); });
           lock();
           say('info', '<p>Das ist die Lösung. Diese Aufgabe zählt nicht als gelöst, deine Serie beginnt neu. Sieh dir den Rechenweg an und probiere dann die nächste Aufgabe.</p>');
           showAfter();
