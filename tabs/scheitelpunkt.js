@@ -15,7 +15,7 @@ L.registerTab({id:'scheitelpunkt',title:'Scheitelpunkt',order:2,mount(panel,{sto
  const status=h('p',{class:'muted'} ,'');
  const scoreEl=h('strong',null,'Richtig gelöst: '+solved+' · Punkte: '+score);
  const question=h('div',{class:'sp-card'});
- const inputs={x:h('input',{type:'text',inputmode:'decimal',placeholder:'z. B. -2'}),y:h('input',{type:'text',inputmode:'decimal',placeholder:'z. B. 5'})};
+ const inputs={x:h('input',{type:'text',inputmode:'text',placeholder:'z. B. −2',autocomplete:'off'}),y:h('input',{type:'text',inputmode:'text',placeholder:'z. B. 5',autocomplete:'off'})};
  const form=h('div',{class:'sp-grid'});
  form.append(h('label',null,'xₛ (Scheitel-x)',inputs.x),h('label',null,'yₛ (Scheitel-y)',inputs.y));
  const feedback=h('div',{class:'sp-feedback',hidden:true});
@@ -27,21 +27,25 @@ L.registerTab({id:'scheitelpunkt',title:'Scheitelpunkt',order:2,mount(panel,{sto
   inputs.x.value='';inputs.y.value='';feedback.hidden=true;attempted=false;graph.innerHTML='';draw();
  }
  function draw(){
-  const w=500,ht=260,scale=22,ox=w/2,oy=ht/2;
+  const w=500,ht=280,ox=w/2,oy=ht/2;
+  // Maßstab automatisch so wählen, dass der Scheitel samt etwas Rand sichtbar bleibt.
+  const scale=Math.max(12,Math.min(32,Math.min(210/(Math.abs(vertex.x)+1),115/(Math.abs(vertex.y)+1))));
+  const step=1, xmax=Math.floor(ox/scale),ymax=Math.floor(oy/scale);
   let path='';
   for(let i=0;i<=w;i++){let x=(i-ox)/scale,y=a*x*x+b*x+c,py=oy-y*scale;path+=(i?'L':'M')+i+','+py;}
   const vx=ox+vertex.x*scale,vy=oy-vertex.y*scale;
   let grid='';
-  for(let n=-11;n<=11;n++){
+  for(let n=-xmax;n<=xmax;n++){
    const px=ox+n*scale;
-   if(px>=0&&px<=w){grid+='<line x1="'+px+'" y1="0" x2="'+px+'" y2="'+ht+'" stroke="var(--line)" stroke-width="'+(n%5===0?1.5:1)+'"/>';if(n!==0)grid+='<text x="'+px+'" y="'+(oy+16)+'" fill="var(--muted)" font-size="11" text-anchor="middle">'+n+'</text>';}
+   grid+='<line x1="'+px+'" y1="0" x2="'+px+'" y2="'+ht+'" stroke="var(--line)" stroke-width="'+(n%5===0?1.5:1)+'"/>';
+   if(n!==0)grid+='<text x="'+px+'" y="'+(oy+16)+'" fill="var(--muted)" font-size="12" text-anchor="middle">'+n+'</text>';
   }
-  for(let n=-5;n<=5;n++){
+  for(let n=-ymax;n<=ymax;n++){
    const py=oy-n*scale;
    grid+='<line x1="0" y1="'+py+'" x2="'+w+'" y2="'+py+'" stroke="var(--line)" stroke-width="'+(n%5===0?1.5:1)+'"/>';
-   if(n!==0)grid+='<text x="'+(ox-8)+'" y="'+(py+4)+'" fill="var(--muted)" font-size="11" text-anchor="end">'+n+'</text>';
+   if(n!==0)grid+='<text x="'+(ox-8)+'" y="'+(py+4)+'" fill="var(--muted)" font-size="12" text-anchor="end">'+n+'</text>';
   }
-  graph.innerHTML='<svg class="sp-graph" viewBox="0 0 500 260" role="img" aria-label="Koordinatensystem mit Parabel"><g>'+grid+'</g><line x1="'+ox+'" y1="0" x2="'+ox+'" y2="'+ht+'" stroke="var(--ink)" stroke-width="1.8"/><line x1="0" y1="'+oy+'" x2="'+w+'" y2="'+oy+'" stroke="var(--ink)" stroke-width="1.8"/><path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="'+vx+'" cy="'+vy+'" r="5" fill="var(--ok)"/><text x="'+(vx+8)+'" y="'+(vy-8)+'" fill="var(--ok)" font-weight="bold" font-size="12">S</text><text x="486" y="'+(oy-7)+'" fill="var(--ink)" font-size="12">x</text><text x="'+(ox+8)+'" y="14" fill="var(--ink)" font-size="12">y</text></svg>';
+  graph.innerHTML='<svg class="sp-graph" style="height:280px" viewBox="0 0 500 280" role="img" aria-label="Parabel im beschrifteten Koordinatenraster"><g>'+grid+'</g><line x1="'+ox+'" y1="0" x2="'+ox+'" y2="'+ht+'" stroke="var(--ink)" stroke-width="2"/><line x1="0" y1="'+oy+'" x2="'+w+'" y2="'+oy+'" stroke="var(--ink)" stroke-width="2"/><path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="'+vx+'" cy="'+vy+'" r="6" fill="var(--ok)" stroke="var(--surface)" stroke-width="2"/><text x="'+(vx+9)+'" y="'+(vy-10)+'" fill="var(--ok)" font-weight="bold" font-size="14">S</text><text x="486" y="'+(oy-8)+'" fill="var(--ink)" font-size="13">x</text><text x="'+(ox+8)+'" y="14" fill="var(--ink)" font-size="13">y</text></svg>';
  }
  const check=h('button',{class:'btn primary',type:'button'},'Prüfen');
  check.addEventListener('click',()=>{
