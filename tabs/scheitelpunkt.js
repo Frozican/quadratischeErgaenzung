@@ -24,7 +24,7 @@ L.registerTab({id:'scheitelpunkt',title:'Scheitelpunkt',order:2,mount(panel,{sto
   a=util.pick([-3,-2,-1,1,2,3]); b=util.rand(-8,8); c=util.rand(-8,8);
   vertex={x:-b/(2*a),y:c-b*b/(4*a)};
   question.innerHTML='<h3>Bestimme den Scheitelpunkt</h3><div class="expr" style="font-size:1.7rem">f(x) = '+a+'x² '+(b>=0?'+ ':'− ')+Math.abs(b)+'x '+(c>=0?'+ ':'− ')+Math.abs(c)+'</div><p>Berechne xₛ und anschließend yₛ. Gib beide Werte ein.</p>';
-  inputs.x.value='';inputs.y.value='';feedback.hidden=true;attempted=false;graph.innerHTML='';
+  inputs.x.value='';inputs.y.value='';feedback.hidden=true;attempted=false;graph.innerHTML='';draw();
  }
  function draw(){
   const w=500,ht=240, scale=24, ox=w/2,oy=ht/2;
